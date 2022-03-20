@@ -15,9 +15,6 @@ def preTreat():
 
     BOOKTYPEAMOUNT = 43
 
-    '''
-    学期 学号 图书馆门禁次数 食堂总消费 交通总消费 宿舍总消费 超市总消费 书类别  排名
-    '''
     data = []
 
     '''
@@ -39,7 +36,7 @@ def preTreat():
                 end = pre + 1
                 while end < lenLine - 1:
                     if line[end] == '\t':
-                        temp += int(line[pre:end])  # We got the content of a particular field
+                        temp += [int(line[pre:end])]  # We got the content of a particular field
                         pre = end + 1
                         break
                     else:
@@ -47,11 +44,12 @@ def preTreat():
             else:
                 pre = pre + 1
                 # end = pre + 1
-        data += temp
+        data += [temp]
         line = fileRank.readline()
     '''
     学期  学号  排名
     '''
+    # print(data)
     # Sort by 学号 first, 学期 second
     data = sorted(data, key=lambda x: (x[1], x[0]))
 
@@ -70,7 +68,7 @@ def preTreat():
     zero26 = np.zeros(26, int).tolist()
     i = 0
     while i < len(data):
-        data[i] += zero26   # Expand the dimension
+        data[i] += zero26  # Expand the dimension
         i = i + 1
 
     # How much time/(student * day), 31 days each month
@@ -105,14 +103,14 @@ def preTreat():
     '''
     Calculate average, variance, max, min
     '''
-    n_1 = 5  # 1/3 semester, 5 months
-    n_2 = 6  # 2   semester, 6 months
+    numMonths1st = 5  # 1/3 semester, 5 months
+    numMonths2nd = 6  # 2   semester, 6 months
     i = 0
     while i < len(data):
         if i % 3 == 1:  # 是否为第二学期
-            n = n_2
+            n = numMonths2nd
         else:
-            n = n_1
+            n = numMonths1st
         monthAverage = data[i][3] / n
         """
         TBD: 日平均值偏小？？有些日期对应取值为0
@@ -140,24 +138,30 @@ def preTreat():
         dayVariance = np.var(dayAmount)
         data[i][4:12] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin
         i = i + 1
+
     '''
     读入借书
     '''
 
-    BookClass = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+    BOOKCASES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
                  'TB', 'TD', 'TE', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TP', 'TQ', 'TS', 'TT', 'TU', 'TV',
                  'U', 'V', 'X', 'Y', 'Z', 'OO']
 
     '''
-    0    1     2    3-28             29-71             72-75              76-79    
-    学期  学号  排名  fileLibrary属性   每类书借阅总次数    月平均/方差/max/min  日平均/方差/max/min
+    0    1     2        
+    学期  学号  排名
+    3          4-7                8-11               12-28       
+    入馆总数    月平均/方差/max/min  日平均/方差/max/min  06-22入馆数
+    29-71             72-75              76-79    
+    每类书借阅总次数    月平均/方差/max/min  日平均/方差/max/min
     '''
     # How much book each person borrows each day
     data2 = np.zeros(shape=(len(data), 6, 31)).tolist()
     bookInfo = pickle.load(open('BookInfo.pkl', 'rb'))
     zeroBookTypeAmount = np.zeros(BOOKTYPEAMOUNT, int).tolist()
     i = 0
-    timeOffset = 30  # 书类别偏移
+    # data[29:71] -> BOOKCASES[0:42]
+    bookTypeOffset = 29
     while i < len(data):
         data[i] += zeroBookTypeAmount
         i = i + 1
@@ -174,79 +178,129 @@ def preTreat():
             data2[index][(month - 9) % 12][day - 1] += 1
         else:
             data2[index][month - 2][day - 1] += 1
+        # book not in BOOKCASES
         if bookName not in bookInfo.keys():
-            data[index][42 + timeOffset - 1] += 1
+            data[index][42 + bookTypeOffset] += 1
         else:
-            i = 0
-            while i < len(BookClass) - 1:
-                if BookClass[i] == bookInfo[bookName]:
-                    break
-                i = i + 1
-            data[index][i + timeOffset - 1] += 1
+            pos = BOOKCASES.index(bookInfo[bookName])
+            data[index][pos + bookTypeOffset] += 1
         line = fileBookBorrow.readline()
     i = 0
     '''
-    计算月 日 放进 data
+    Calculate average, variance, max, min
     '''
-    zeros8 = np.zeros(8, int).tolist();
+    zeros8 = np.zeros(8, int).tolist()
     while i < len(data):
         data[i] += zeros8
         i = i + 1
     i = 0
     while i < len(data):
         if i % 3 == 1:
-            n = n_2
+            n = numMonths2nd
         else:
-            n = n_1
-        num = sum(data[i][timeOffset - 1:])  # 某个人某学期总借书量
-        monthAverage = num / n;
-        dayAverage = num / (n * 31);
-        monthAmount = np.zeros(n, int).tolist();
-        dayAmount = np.zeros(n * 31, int).tolist();
-        indexMonth = 0  # 第j个月
-        indexDaySemester = 0  # 该学期第l天
+            n = numMonths1st
+        num = sum(data[i][bookTypeOffset:])  # 某个人某学期总借书量
+        monthAverage = num / n
+        dayAverage = num / (n * 31)
+        monthAmount = np.zeros(n, int).tolist()
+        dayAmount = np.zeros(n * 31, int).tolist()
+        indexMonth = 0
+        indexDaySemester = 0
         while indexMonth < n:
             monthAmount[indexMonth] = int(sum(data2[i][indexMonth]))
-            indexDayMonth = 0  # 第j月中的k天
+            indexDayMonth = 0
             while indexDayMonth < 31:
                 dayAmount[indexDaySemester] = int(data2[i][indexMonth][indexDayMonth])
                 indexDaySemester = indexDaySemester + 1
                 indexDayMonth = indexDayMonth + 1
             indexMonth = indexMonth + 1
-        monthMax = max(monthAmount);
-        dayMax = max(dayAmount);
-        monthMin = min(monthAmount);
-        dayMin = min(dayAmount);
-        monthVariance = np.var(monthAmount);
-        dayVariance = np.var(dayAmount);
-        data[i][72:] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin;
+        monthMax = max(monthAmount)
+        dayMax = max(dayAmount)
+        monthMin = min(monthAmount)
+        dayMin = min(dayAmount)
+        monthVariance = np.var(monthAmount)
+        dayVariance = np.var(dayAmount)
+        data[i][72:] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin
         i = i + 1
 
-    # 整理data
-    train_predata_x = []
-    train_y = []
-    for i in range(538):
-        tmp = [data[i * 3][2], data[i * 3 + 1][2]] + [data[i * 3][1]] + data[i * 3][3:] + data[i * 3 + 1][3:] + \
-              data[i * 3 + 2][3:]
+    '''
+    0    1     2        
+    学期  学号  排名
+    3          4-7                8-11               12-28       
+    入馆总数    月平均/方差/max/min  日平均/方差/max/min  06-22入馆数
+    29-71             72-75              76-79    
+    每类书借阅总次数    月平均/方差/max/min  日平均/方差/max/min
+    80   81  82  83   84  85  86                87-90              91-94
+    超市 打印 交通 教室 食堂 宿舍 图书馆--消费总额    月平均/方差/max/min  日平均/方差/max/min
+    '''
 
-        train_predata_x.append(tmp)
-        train_y.append(data[i * 3 + 2][2])
-    # =============================================================================
-    #     if item[0] == 3:
-    #         train_y.append(item[2])
-    #     if item[1] == pre_stu_id:
-    #         stu_info.extend(item[2:])
-    #     else:
-    #         data_zhengli.append(stu_info)
-    #         stu_info = item[1:]
-    #         pre_stu_id = item[1]
-    # =============================================================================
+    SPENDCASES = ['超市', '打印', '交通', '教室', '食堂', '宿舍', '图书馆']
+    # How much money each person spends each day
+    SPENDTYPEAMOUNT = 7
+    data2 = np.zeros(shape=(len(data), 6, 31)).tolist()
+    zeroSpendTypeAmount = np.zeros(SPENDTYPEAMOUNT, int).tolist()
+    i = 0
+    # data[80:86] -> BOOKCASES[0:6]
+    spendTypeOffset = 80
+    while i < len(data):
+        data[i] += zeroSpendTypeAmount
+        i = i + 1
 
-    ''' 学期、学号、排名、门禁、书籍信息 '''
-    # pickle.dump(data, open('data_pre.pkl', 'wb'))
-    # pickle.dump(train_predata_x, open('train_predata_x.pkl', 'wb'))
+    line = fileSpend.readline()
+    line = fileSpend.readline()
 
-    return train_predata_x, train_y
+    while line:
+        (semester, studentID, spendName, date, endTime, moneySpent) = line.split('\t')
+        # print(semester, studentID, spendName, date, endTime, moneySpent)
+        index = (int(studentID) - 1) * 3 + int(semester) - 1
+        month = int(date[:2])
+        day = int(date[2:])
+        if int(semester) != 2:
+            data2[index][(month - 9) % 12][day - 1] += float(moneySpent)
+        else:
+            data2[index][month - 2][day - 1] += float(moneySpent)
+        pos = SPENDCASES.index(spendName)
+        # 索引是否正确？？
+        data[index][pos + spendTypeOffset] += float(moneySpent)
+        line = fileSpend.readline()
+    i = 0
+    '''
+    Calculate average, variance, max, min
+    '''
+    zeros8 = np.zeros(8, int).tolist()
+    while i < len(data):
+        data[i] += zeros8
+        i = i + 1
+    i = 0
+    while i < len(data):
+        if i % 3 == 1:
+            n = numMonths2nd
+        else:
+            n = numMonths1st
+        num = sum(data[i][spendTypeOffset:])  # 某个人某学期消费金额
+        dayAverage = num / (n * 31)
+        monthAmount = np.zeros(n, int).tolist()
+        dayAmount = np.zeros(n * 31, int).tolist()
+        indexMonth = 0
+        indexDaySemester = 0
+        while indexMonth < n:
+            monthAmount[indexMonth] = int(sum(data2[i][indexMonth]))
+            indexDayMonth = 0
+            while indexDayMonth < 31:
+                dayAmount[indexDaySemester] = int(data2[i][indexMonth][indexDayMonth])
+                indexDaySemester = indexDaySemester + 1
+                indexDayMonth = indexDayMonth + 1
+            indexMonth = indexMonth + 1
+        monthMax = max(monthAmount)
+        dayMax = max(dayAmount)
+        monthMin = min(monthAmount)
+        dayMin = min(dayAmount)
+        monthVariance = np.var(monthAmount)
+        dayVariance = np.var(dayAmount)
+        data[i][87:] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin
+        i = i + 1
 
-
+    # print(np.array(data).shape)
+    # 1614行，3个学期，一共538人
+    pickle.dump(data, open('DataPreTreated.pkl', 'wb'))
 
