@@ -6,12 +6,19 @@
 import numpy as np
 import pickle
 
+def progressTag(workType, workName, progress, isDebug = False):
+    if isDebug:
+        print(workType + ": " + workName + " " + progress)
 
-def preTreat():
-    fileRank = open('成绩.txt', 'r')
-    fileLibrary = open('图书馆门禁.txt', 'r')
-    fileBookBorrow = open('借书.txt', 'r')
-    fileSpend = open('消费.txt', 'r')
+def preTreat(isTrain=True, isDebug = False):
+    if isTrain:
+        directoryTag = "训练"
+    else:
+        directoryTag = "测试"
+    fileRank = open(directoryTag + '/成绩.txt', 'r')
+    fileLibrary = open(directoryTag + '/图书馆门禁.txt', 'r')
+    fileBookBorrow = open(directoryTag + '/借书.txt', 'r')
+    fileSpend = open(directoryTag + '/消费.txt', 'r')
 
     BOOKTYPEAMOUNT = 43
 
@@ -21,37 +28,61 @@ def preTreat():
     读入成绩
     学期 学号 排名
     '''
+    progressTag(directoryTag, "成绩", "开始", isDebug)
+
     # Repeat this to ignore the title
     fileRank.readline()
     line = fileRank.readline()
     while line:
         temp = []
-        pre = 0
         lenLine = len(line)
-        # For each character in each line, covert chr -> number and save it in Array.
-        # '\n' ignored
-        # [pre:end) -> temp
-        while pre < lenLine - 2:
-            if line[pre] != '\t':
-                end = pre + 1
-                while end < lenLine - 1:
-                    if line[end] == '\t':
-                        temp += [int(line[pre:end])]  # We got the content of a particular field
-                        pre = end + 1
-                        break
-                    else:
-                        end = end + 1
+        start = 0
+        while start < lenLine - 1:
+            if line[start].isdigit():
+                end = start + 1
+                if end == lenLine:
+                    break
+                while line[end].isdigit():
+                    end += 1
+                temp += [int(line[start:end])]  # We got the content of a particular field
+                start = end + 1
             else:
-                pre = pre + 1
-                # end = pre + 1
+                start += 1
         data += [temp]
         line = fileRank.readline()
+        # while pre < lenLine - 2:
+        #     if line[pre] != '\t':
+        #         end = pre + 1
+        #         while end < lenLine - 1:
+        #             if line[end] == '\t':
+        #                 temp += [int(line[pre:end])]  # We got the content of a particular field
+        #                 pre = end + 1
+        #                 break
+        #             else:
+        #                 end = end + 1
+        #     else:
+        #         pre = pre + 1
+        #         # end = pre + 1
+        # data += [temp]
+        # line = fileRank.readline()
     '''
     学期  学号  排名
     '''
     # print(data)
     # Sort by 学号 first, 学期 second
     data = sorted(data, key=lambda x: (x[1], x[0]))
+    i = 0
+    lenData = len(data)
+    if not isTrain:
+        while i < lenData:
+            temp = data[i].copy()
+            temp[2] = 0
+            temp[0] = 3
+            data += [temp]
+            i += 2
+    progressTag(directoryTag, "成绩", "结束", isDebug)
+    data = sorted(data, key=lambda x: (x[1], x[0]))
+    i = 0
 
     '''
     读入图书馆门禁数(学期计)
@@ -61,25 +92,31 @@ def preTreat():
     0    1     2    3          4-7                8-11               12-28       
     学期  学号  排名  入馆总数    月平均/方差/max/min  日平均/方差/max/min  06-22入馆数
     '''
+    progressTag(directoryTag, "图书馆门禁", "开始", isDebug)
 
     # Repeat this to ignore the title
     line = fileLibrary.readline()
     line = fileLibrary.readline()
     zero26 = np.zeros(26, int).tolist()
     i = 0
-    while i < len(data):
+    lenData = len(data)
+    while i < lenData:
         data[i] += zero26  # Expand the dimension
         i = i + 1
-
     # How much time/(student * day), 31 days each month
     # 6 months, 31 days
     data3Semesters = np.zeros(shape=(len(data), 6, 31)).tolist()
     while line:
-        (semester, studentID, date, time, endTime) = line.split('\t')
+        libraryContent = line.split('\t')
+        semester = libraryContent[0]
+        studentID = libraryContent[1]
+        date = libraryContent[2]
+        time = libraryContent[3]
+        # (semester, studentID, date, time, end) = line.split('\t')
         semester = int(semester)
         studentID = int(studentID)
         # studentID as the main Key, semester as the secondary key in data
-        index = (studentID - 1) * 3 + semester - 1
+        index = (int(studentID) - 1) * 3 + int(semester) - 1
         # total time in a semester
         data[index][3] += 1
         # data[12:28] -> 06-22
@@ -139,9 +176,12 @@ def preTreat():
         data[i][4:12] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin
         i = i + 1
 
+    progressTag(directoryTag, "图书馆门禁", "结束", isDebug)
+
     '''
     读入借书
     '''
+    progressTag(directoryTag, "借书", "开始", isDebug)
 
     BOOKCASES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
                  'TB', 'TD', 'TE', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TP', 'TQ', 'TS', 'TT', 'TU', 'TV',
@@ -170,7 +210,12 @@ def preTreat():
     line = fileBookBorrow.readline()
 
     while line:
-        (semester, studentID, bookName, date, endTime) = line.split('\t')
+        bookBorrowContent = line.split('\t')
+        semester = bookBorrowContent[0]
+        studentID = bookBorrowContent[1]
+        bookName = bookBorrowContent[2]
+        date = bookBorrowContent[3]
+        # (semester, studentID, bookName, date, endTime) = line.split('\t')
         index = (int(studentID) - 1) * 3 + int(semester) - 1
         month = int(date[:2])
         day = int(date[2:])
@@ -223,6 +268,8 @@ def preTreat():
         data[i][72:] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin
         i = i + 1
 
+    progressTag(directoryTag, "借书", "结束", isDebug)
+
     '''
     0    1     2        
     学期  学号  排名
@@ -233,6 +280,8 @@ def preTreat():
     80   81  82  83   84  85  86                87-90              91-94
     超市 打印 交通 教室 食堂 宿舍 图书馆--消费总额    月平均/方差/max/min  日平均/方差/max/min
     '''
+
+    progressTag(directoryTag, "消费", "开始", isDebug)
 
     SPENDCASES = ['超市', '打印', '交通', '教室', '食堂', '宿舍', '图书馆']
     # How much money each person spends each day
@@ -252,6 +301,9 @@ def preTreat():
     while line:
         (semester, studentID, spendName, date, endTime, moneySpent) = line.split('\t')
         # print(semester, studentID, spendName, date, endTime, moneySpent)
+        if spendName not in SPENDCASES:
+            line = fileSpend.readline()
+            continue
         index = (int(studentID) - 1) * 3 + int(semester) - 1
         month = int(date[:2])
         day = int(date[2:])
@@ -300,7 +352,12 @@ def preTreat():
         data[i][87:] = monthAverage, monthVariance, monthMax, monthMin, dayAverage, dayVariance, dayMax, dayMin
         i = i + 1
 
-    # print(np.array(data).shape)
-    # 1614行，3个学期，一共538人
-    pickle.dump(data, open('DataPreTreated.pkl', 'wb'))
+    progressTag(directoryTag, "消费", "结束", isDebug)
 
+    # print(np.array(data).shape)
+    # 训练集：1614行，3个学期，一共538人
+    # 测试集：273行，3个学期，一共91人
+    if isTrain:
+        pickle.dump(data, open('TrainDataPreTreated.pkl', 'wb'))
+    else:
+        pickle.dump(data, open('TestDataPreTreated.pkl', 'wb'))
