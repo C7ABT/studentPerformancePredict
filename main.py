@@ -6,7 +6,7 @@ from trainModel import testModel
 
 def main():
     # readBookType()
-    # preTreat()
+    preTreat()
     dataReshape()
     testModel()
 

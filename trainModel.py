@@ -10,8 +10,8 @@ import numpy as np
 dir_name = './'
 xTrainPickle = pickle.load(open(dir_name + 'TrainX.pkl', 'rb'))
 yTrainPickle = pickle.load(open(dir_name + 'TrainY.pkl', 'rb'))
-# xTestPickle = pickle.load(open(dir_name + 'test_x.pkl', 'rb'))
-# yTestPickle = pickle.load(open(dir_name + 'test_y.pkl', 'rb'))
+xTestPickle = pickle.load(open(dir_name + 'TestX.pkl', 'rb'))
+yTestPickle = pickle.load(open(dir_name + 'TestY.pkl', 'rb'))
 
 # 归一化训练集
 def normalization(trainData, testData):
@@ -42,33 +42,34 @@ def testModel():
 
     xTrain = np.array(xTrainPickle)
     yTrain = np.array(yTrainPickle)
-    # xTest = np.array(xTestPickle)
-    # yTest = np.array(yTestPickle)
+    xTest = np.array(xTestPickle)
+    yTest = np.array(yTestPickle)
 
     # xTrain, xTest, max_num = normalization(xTrain, xTest)
-    xTrain, xTest, max_num = normalization(xTrain, xTrain)
+    xTrain, xTest, max_num = normalization(xTrain, xTest)
     yTrain = yTrain / max(yTrain)
 
     model = RandomForestRegressor(1000)
     model.fit(xTrain, yTrain)
     # scores = model.score(xTest, yTest)
     # yPredicted = model.predict(xTest)
-    scores = model.score(xTrain, yTrain)
+    scores = model.score(xTest, yTest)
     yPredicted = model.predict(xTrain)
     i = 0
     t = 0
     yPredicted = sortPredict(yPredicted)
 
-    print(scores)
+    # print(scores)
     print(yPredicted)
-    # while i < len(yPredicted):
-    #     if abs(round(yPredicted[i]) - yTest[i]) <= 3:
-    #         t = t + 1
-    #     i = i + 1
-    # t = t / len(yPredicted)
-    #
-    # n = len(yPredicted)
-    # rou = 1 - 1 * sum((yPredicted - yTest) ** 2) / (n * (n ** 2 - 1))
+    while i < len(yPredicted):
+        if abs(round(yPredicted[i]) - yTest[i]) <= 3:
+            t = t + 1
+        i = i + 1
+    t = t / len(yPredicted)
+
+    n = len(yPredicted)
+    rou = 1 - 6 * sum((yPredicted - yTest) ** 2) / (n * (n ** 2 - 1))
+    print(rou)
 
 
 def sortPredict(yPredicted):

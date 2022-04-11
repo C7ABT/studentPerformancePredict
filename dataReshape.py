@@ -23,9 +23,13 @@ def dataReshape():
         tmp = []
         for i in range(3):
             d = data[index * 3 + i]
-            tmp = tmp + d[3:] + [d[3]]
+            tmp = tmp + d[3:] + [d[2]]
         xTrain.append(tmp[:-1])
         yTrain.append(tmp[-1])
 
-    pickle.dump(xTrain, open('TrainX.pkl', 'wb'))
-    pickle.dump(yTrain, open('TrainY.pkl', 'wb'))
+    index = int(len(xTrain) / 5 * 4)
+    pickle.dump(xTrain[:index], open('TrainX.pkl', 'wb'))
+    pickle.dump(yTrain[:index], open('TrainY.pkl', 'wb'))
+    pickle.dump(xTrain[:index], open('TestX.pkl', 'wb'))
+    pickle.dump(yTrain[:index], open('TestY.pkl', 'wb'))
+
