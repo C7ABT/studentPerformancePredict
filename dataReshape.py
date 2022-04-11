@@ -5,43 +5,82 @@
 
 import pickle
 
-import numpy
-
-
 def dataReshape():
-    trainDataPreTreated = pickle.load(open('TrainDataPreTreated.pkl', 'rb'))
-    testDataPreTreated = pickle.load(open('TestDataPreTreated.pkl', 'rb'))
+    dataPreTreated = pickle.load(open('dataPreTreated.pkl', 'rb'))
+    dataToReshape = []
 
-    trainData = []
-    testData = []
+    for index in range(len(dataPreTreated)):
+        dataToReshape.append(dataPreTreated[index])
 
-    for index in range(len(trainDataPreTreated)):
-        trainData.append(trainDataPreTreated[index])
-    for index in range(len(testDataPreTreated)):
-        testData.append(testDataPreTreated[index])
-    '''
-    把三个学期的成绩合在一起，不要学期，学号，排名放在最后
-    '''
-    trainDataX = []
-    trainDataY = []
-    for index in range(int(len(trainData) / 3)):
-        tmp = []
-        for i in range(3):
-            d = trainData[index * 3 + i]
-            tmp = tmp + d[3:] + [d[2]]
-        trainDataX.append(tmp[:-1])
-        trainDataY.append(tmp[-1])
-    pickle.dump(trainDataX, open('TrainX.pkl', 'wb'))
-    pickle.dump(trainDataY, open('TrainY.pkl', 'wb'))
-
+    trainDataX1 = []
+    trainDataY1 = []
+    trainDataX2 = []
+    trainDataY2 = []
     testDataX = []
     testDataY = []
-    for index in range(int(len(testData) / 3)):
+    for index in range(int(len(dataToReshape) / 3)):
         tmp = []
-        for i in range(3):
-            d = testData[index * 3 + i]
-            tmp = tmp + d[3:] + [d[2]]
+        d1 = dataToReshape[index * 3]
+        tmp += d1[3:] + [d1[2]]
+        trainDataX1.append(tmp[:-1])
+        trainDataY1.append(tmp[-1])
+
+        tmp = []
+        d2 = dataToReshape[index * 3 + 1]
+        tmp += d2[3:] + [d2[2]]
+        trainDataX2.append(tmp[:-1])
+        trainDataY2.append(tmp[-1])
+
+        tmp = []
+        testData = dataToReshape[index * 3 + 2]
+        tmp = tmp + testData[3:] + [testData[2]]
         testDataX.append(tmp[:-1])
         testDataY.append(tmp[-1])
+    pickle.dump(trainDataX1, open('TrainX1.pkl', 'wb'))
+    pickle.dump(trainDataY1, open('TrainY1.pkl', 'wb'))
+    pickle.dump(trainDataX2, open('TrainX2.pkl', 'wb'))
+    pickle.dump(trainDataY2, open('TrainY2.pkl', 'wb'))
     pickle.dump(testDataX, open('TestX.pkl', 'wb'))
     pickle.dump(testDataY, open('TestY.pkl', 'wb'))
+
+
+# 使用提供的测试集测试
+def dataReshapeTest():
+    trainDataPreTreated = pickle.load(open('dataPreTreated.pkl', 'rb'))
+    testDataPreTreated = pickle.load(open('TestDataPreTreated.pkl', 'rb'))
+    trainDataToReshape = []
+    testDataToReshape = []
+
+    for index in range(len(trainDataPreTreated)):
+        trainDataToReshape.append(trainDataPreTreated[index])
+    # for index in range(len(testDataPreTreated)):
+    #     testDataToReshape.append(testDataPreTreated[index])
+
+    trainDataX = []
+    trainDataY = []
+    testDataX = []
+    testDataY = []
+    for index in range(int(len(trainDataToReshape) / 3)):
+        tmp = []
+        for i in range(3):
+            d = trainDataToReshape[index * 3 + i]
+            tmp += d[3:] + [d[2]]
+        trainDataX.append(tmp[:-1])
+        trainDataY.append(tmp[-1])
+
+    for index in range(int(len(testDataToReshape) / 3)):
+        tmp = []
+        for i in range(3):
+            d = testDataToReshape[index * 3 + i]
+            tmp += d[3:] + [d[2]]
+        testDataX.append(tmp[:-1])
+        testDataY.append(tmp[-1])
+    # pickle.dump(trainDataX, open('TrainX.pkl', 'wb'))
+    # pickle.dump(trainDataY, open('TrainY.pkl', 'wb'))
+    # pickle.dump(testDataX, open('TestX.pkl', 'wb'))
+    # pickle.dump(testDataY, open('TestY.pkl', 'wb'))
+    index = int(len(trainDataX) / 5 * 4)
+    pickle.dump(trainDataX[0: index], open('TrainX.pkl', 'wb'))
+    pickle.dump(trainDataY[0: index], open('TrainY.pkl', 'wb'))
+    pickle.dump(trainDataX[index:], open('TestX.pkl', 'wb'))
+    pickle.dump(trainDataY[index:], open('TestY.pkl', 'wb'))

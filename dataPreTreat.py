@@ -358,6 +358,6 @@ def preTreat(isTrain=True, isDebug = False):
     # 训练集：1614行，3个学期，一共538人
     # 测试集：273行，3个学期，一共91人
     if isTrain:
-        pickle.dump(data, open('TrainDataPreTreated.pkl', 'wb'))
+        pickle.dump(data, open('dataPreTreated.py', 'wb'))
     else:
         pickle.dump(data, open('TestDataPreTreated.pkl', 'wb'))
