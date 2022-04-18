@@ -67,20 +67,14 @@ def testModel():
     yPredicted = model.predict(xTest)
     yPredicted = sortPredict(yPredicted)
 
-    print(scores)
+    # print(scores)
     print(yPredicted)
 
-    i = 0
-    accurateElement = 0
-    while i < len(yPredicted):
-        if abs(round(yPredicted[i]) - yTest[i]) <= 3:
-            accurateElement = accurateElement + 1
-        i = i + 1
-    accurateElement = accurateElement / len(yPredicted) * 100
     print("Accuracy: ")
-    print(accurateElement)
-    print("Difference between Predicted and Real: ")
-    print(yPredicted - yTest)
+    n = len(yPredicted)
+    rou = 1 - 6 * sum((yPredicted - yTest) ** 2) / (n * (n ** 2 - 1))
+    print(rou)
+
 
 
 def sortPredict(yPredicted):

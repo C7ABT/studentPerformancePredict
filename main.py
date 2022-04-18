@@ -9,10 +9,9 @@ def main():
     # readBookType()
     preTreat(isTrain=True, isDebug=True)
     preTreat(isTrain=False, isDebug=True)
-    # dataReshape()
-    dataReshapeTest()
-    testModelTest()
-
+    dataReshape()
+    # dataReshapeTest()
+    testModel()
 
 if __name__ == '__main__':
     main()
