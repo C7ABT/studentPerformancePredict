@@ -17,19 +17,19 @@ def dataReshape():
     把三个学期的成绩合在一起，不要学期，学号，成绩放在最后
     '''
 
-    xTrain = []
-    yTrain = []
+    xData = []
+    yData = []
     for index in range(int(len(data) / 3)):
         tmp = []
         for i in range(3):
             d = data[index * 3 + i]
             tmp = tmp + d[3:] + [d[2]]
-        xTrain.append(tmp[:-1])
-        yTrain.append(tmp[-1])
+        xData.append(tmp[:-1])
+        yData.append(tmp[-1])
 
-    index = int(len(xTrain) / 5 * 4)
-    pickle.dump(xTrain[:index], open('TrainX.pkl', 'wb'))
-    pickle.dump(yTrain[:index], open('TrainY.pkl', 'wb'))
-    pickle.dump(xTrain[:index], open('TestX.pkl', 'wb'))
-    pickle.dump(yTrain[:index], open('TestY.pkl', 'wb'))
+    index = int(len(xData) / 5 * 4)
+    pickle.dump(xData[:index], open('TrainX.pkl', 'wb'))
+    pickle.dump(yData[:index], open('TrainY.pkl', 'wb'))
+    pickle.dump(xData[index:], open('TestX.pkl', 'wb'))
+    pickle.dump(yData[index:], open('TestY.pkl', 'wb'))
 

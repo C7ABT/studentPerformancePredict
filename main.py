@@ -6,8 +6,8 @@ from trainModel import testModel
 
 def main():
     # readBookType()
-    preTreat()
-    dataReshape()
+    # preTreat()
+    # dataReshape()
     testModel()
 
 if __name__ == '__main__':
