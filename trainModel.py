@@ -4,13 +4,17 @@
 # @Function: 模型训练
 
 import pickle
+
+from keras.optimizers import Adam
+from keras.utils import to_categorical
 from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import LSTM, Activation
+from keras.layers import LSTM, Activation, Bidirectional, Embedding
 from keras.layers import Dense
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import accuracy_score, classification_report
 
 dir_name = './'
 xTrainPickle = pickle.load(open(dir_name + 'TrainX.pkl', 'rb'))
@@ -66,35 +70,17 @@ def scale(trainData, testData):
     return scaler, trainDataScaled, testDataScaled
 
 
-# 将预测值进行逆缩放，使用之前训练好的缩放器，x为一维数组，y为实数
-def invert_scale(scaler, X, y):
-    # 将X,y转换为一个list列表
-    new_row = [x for x in X] + [y]
-    # 将列表转换为数组
-    array = np.array(new_row)
-    # 将数组重构成一个形状为[1,2]的二维数组->[[10,12]]
-    array = array.reshape(1, len(array))
-    # 逆缩放输入的形状为[1,2]，输出形状也是如此
-    invert = scaler.inverse_transform(array)
-    # 只需要返回y值即可
-    return invert[0, -1]
-
-
 def testModel():
-    # xTrain: (430, 278)
-    # yTrain: (430)
     xTrain = np.array(xTrainPickle)
     yTrain = np.array(yTrainPickle)
     xTest = np.array(xTestPickle)
     yTest = np.array(yTestPickle)
 
-    # scalerXTrain, xTrain = scale(xTrain)
-    # scalerXTest, xTest = scale(xTest)
+
     # scaler, xTrain, xTest = scale(xTrain, xTest)
-    # scalerYTrain, yTrain = scale(yTrain)
-    scalerYTest, yTest = scale(yTest)
     # xTrain, xTest, max_num = normalization(xTrain, xTest)
-    yTrain = yTrain / max(yTrain)
+    # yTrainMax = max(yTrain)
+    # yTrain = yTrain / max(yTrain)
 
     # 三维化数据，满足LSTM格式
     xTrainLstm = []
@@ -114,27 +100,28 @@ def testModel():
         xTestLstm.append(tmp)
     xTestLstm = np.array(xTestLstm)
     model = Sequential()
-    model.add(LSTM(units=50, input_shape=(None, 1), return_sequences=True))
-    model.add(LSTM(units=50))
+    # model.add(LSTM(units=100, input_shape=(None, 1), return_sequences=True))
+    # model.add(LSTM(units=100))
+    # model.add(Dense(units=1))
+    # model.add(Activation('softmax'))
+    # model.compile(loss='mse', optimizer='adam')
+
+    model.add(LSTM(units=100))
     model.add(Dense(units=1))
-    model.add(Activation('linear'))
-    model.compile(loss='mse', optimizer='adam')
-    model.fit(xTrainLstm, yTrain, batch_size=32, epochs=5, validation_split=0.1)
+
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.fit(xTrainLstm, yTrain, batch_size=32, epochs=10, validation_split=0.1)
     yPredicted = model.predict(xTestLstm)
+
+    yPredictedListed = []
+    for element in yPredicted:
+        for value in element:
+            yPredictedListed.append(value)
+    yPredicted = np.array(yPredictedListed).astype(int)
     print(yPredicted)
     print(yTest)
-
-    # model = RandomForestRegressor(1000)
-    # model.fit(xTrain, yTrain)
-    # yPredicted = model.predict(xTest)
-    # # yPredicted = sortPredict(yPredicted)
-    # yPredicted = yPredicted * 538
-    # print(yPredicted.astype(np.int))
-    # print(yTest)
-
-    # n = len(yPredicted)
-    # rou = 1 - 6 * sum((yPredicted - yTest) ** 2) / (n * (n ** 2 - 1))
-    # print(rou)
+    print(accuracy_score(yPredicted, yTest))
+    print(classification_report(yPredicted, yTest))
 
 
 def sortPredict(yPredicted):

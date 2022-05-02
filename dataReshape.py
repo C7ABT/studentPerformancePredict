@@ -4,6 +4,7 @@
 # @Function: 将数据“摊平”，3个学期排在1行内
 
 import pickle
+import random
 
 def dataReshape():
     dataPreTreated = pickle.load(open('DataPreTreated.pkl', 'rb'))
@@ -27,9 +28,35 @@ def dataReshape():
         xData.append(tmp[:-1])
         yData.append(tmp[-1])
 
+
+    excellentLine = int(len(yData) / 5)
+    passLine = int(len(yData) / 5 * 3)
+    for i in range(len(yData)):
+        if yData[i] <= excellentLine:
+            yData[i] = 1
+        elif yData[i] >= passLine:
+            yData[i] = 3
+        else:
+            yData[i] = 2
     index = int(len(xData) / 5 * 4)
-    pickle.dump(xData[:index], open('TrainX.pkl', 'wb'))
-    pickle.dump(yData[:index], open('TrainY.pkl', 'wb'))
-    pickle.dump(xData[index:], open('TestX.pkl', 'wb'))
-    pickle.dump(yData[index:], open('TestY.pkl', 'wb'))
+    # 随机抽取20%数据作为测试集，其余数据作为训练集
+    testIndex = random.sample(range(len(xData)), len(xData) - index)
+    xDataTest = []
+    yDataTest = []
+    for i in testIndex:
+        xDataTest.append(xData[i])
+        yDataTest.append(yData[i])
+    xData = [xData[i] for i in range(0, len(xData), 1) if i not in testIndex]
+    yData = [yData[i] for i in range(0, len(yData), 1) if i not in testIndex]
+
+    pickle.dump(xData, open('TrainX.pkl', 'wb'))
+    pickle.dump(yData, open('TrainY.pkl', 'wb'))
+    pickle.dump(xDataTest, open('TestX.pkl', 'wb'))
+    pickle.dump(yDataTest, open('TestY.pkl', 'wb'))
+
+    #
+    # pickle.dump(xData[:index], open('TrainX.pkl', 'wb'))
+    # pickle.dump(yData[:index], open('TrainY.pkl', 'wb'))
+    # pickle.dump(xData[index:], open('TestX.pkl', 'wb'))
+    # pickle.dump(yData[index:], open('TestY.pkl', 'wb'))
 
