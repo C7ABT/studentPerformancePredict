@@ -6,6 +6,7 @@
 import pickle
 import random
 
+
 def dataReshape():
     dataPreTreated = pickle.load(open('DataPreTreated.pkl', 'rb'))
     lenDataPreTreated = len(dataPreTreated)
@@ -28,16 +29,13 @@ def dataReshape():
         xData.append(tmp[:-1])
         yData.append(tmp[-1])
 
-
-    excellentLine = int(len(yData) / 5)
-    passLine = int(len(yData) / 5 * 3)
+    # 二分类，80%之后的为不通过
+    passLine = int(len(yData) / 5 * 4)
     for i in range(len(yData)):
-        if yData[i] <= excellentLine:
-            yData[i] = 1
-        elif yData[i] >= passLine:
-            yData[i] = 3
+        if yData[i] <= passLine:
+            yData[i] = 0
         else:
-            yData[i] = 2
+            yData[i] = 1
     index = int(len(xData) / 5 * 4)
     # 随机抽取20%数据作为测试集，其余数据作为训练集
     testIndex = random.sample(range(len(xData)), len(xData) - index)
@@ -59,4 +57,3 @@ def dataReshape():
     # pickle.dump(yData[:index], open('TrainY.pkl', 'wb'))
     # pickle.dump(xData[index:], open('TestX.pkl', 'wb'))
     # pickle.dump(yData[index:], open('TestY.pkl', 'wb'))
-

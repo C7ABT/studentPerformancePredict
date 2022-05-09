@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import LSTM, Activation, Bidirectional, Embedding
+from keras.layers import LSTM, Activation, Bidirectional, Embedding, RNN
 from keras.layers import Dense
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import accuracy_score, classification_report
@@ -58,59 +58,49 @@ def scale(data):
     data_scaled = scaler.transform(data)
     return scaler, data_scaled
 
-
-def scale(trainData, testData):
-    # 创建一个缩放器，将数据集中的数据缩放到[-1,1]的取值范围中
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    # 使用数据来训练缩放器
-    scaler.fit(trainData)
-    # 使用缩放器来将训练集和测试集进行缩放
-    trainDataScaled = scaler.transform(trainData)
-    testDataScaled = scaler.transform(testData)
-    return scaler, trainDataScaled, testDataScaled
-
-
 def testModel():
     xTrain = np.array(xTrainPickle)
     yTrain = np.array(yTrainPickle)
     xTest = np.array(xTestPickle)
     yTest = np.array(yTestPickle)
 
-
-    # scaler, xTrain, xTest = scale(xTrain, xTest)
+    scaler, xTrain = scale(xTrain)
+    scaler, xTest = scale(xTest)
     # xTrain, xTest, max_num = normalization(xTrain, xTest)
     # yTrainMax = max(yTrain)
     # yTrain = yTrain / max(yTrain)
 
     # 三维化数据，满足LSTM格式
-    xTrainLstm = []
-    for element in xTrain:
-        tmp = []
-        for data in element:
-            dataListed = [data]
-            tmp.append(dataListed)
-        xTrainLstm.append(tmp)
-    xTrainLstm = np.array(xTrainLstm)
-    xTestLstm = []
-    for element in xTest:
-        tmp = []
-        for data in element:
-            dataListed = [data]
-            tmp.append(dataListed)
-        xTestLstm.append(tmp)
-    xTestLstm = np.array(xTestLstm)
+    # xTrainLstm = []
+    # for element in xTrain:
+    #     tmp = []
+    #     for data in element:
+    #         dataListed = [data]
+    #         tmp.append(dataListed)
+    #     xTrainLstm.append(tmp)
+    # xTrainLstm = np.array(xTrainLstm)
+    # xTestLstm = []
+    # for element in xTest:
+    #     tmp = []
+    #     for data in element:
+    #         dataListed = [data]
+    #         tmp.append(dataListed)
+    #     xTestLstm.append(tmp)
+    # xTestLstm = np.array(xTestLstm)
+
+    xTrainLstm = xTrain.reshape((xTrain.shape[0], xTrain.shape[1], 1))
+    xTestLstm = xTest.reshape((xTest.shape[0], xTest.shape[1], 1))
     model = Sequential()
-    # model.add(LSTM(units=100, input_shape=(None, 1), return_sequences=True))
-    # model.add(LSTM(units=100))
-    # model.add(Dense(units=1))
-    # model.add(Activation('softmax'))
-    # model.compile(loss='mse', optimizer='adam')
 
-    model.add(LSTM(units=100))
-    model.add(Dense(units=1))
+    model.add(Bidirectional(LSTM(units=50, dropout=0.1, activation='relu')))
+    # model.add(LSTM(units=50, dropout=0.1, return_sequences=True, activation='relu'))
+    # model.add(LSTM(units=50, dropout=0.1, activation='relu'))
 
+    model.add(Dense(units=1, activation='sigmoid'))
+
+    # optimizer = Adam(learning_rate=0.00015)
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-    model.fit(xTrainLstm, yTrain, batch_size=32, epochs=10, validation_split=0.1)
+    history = model.fit(xTrainLstm, yTrain, batch_size=24, epochs=10)
     yPredicted = model.predict(xTestLstm)
 
     yPredictedListed = []
