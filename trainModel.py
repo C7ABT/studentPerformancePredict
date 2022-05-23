@@ -45,19 +45,19 @@ def testModel():
     xTestLstm = xTest.reshape((xTest.shape[0], xTest.shape[1], 1))
     model = Sequential()
 
-    model.add(LSTM(units=5, dropout=0.1, activation='relu'))
+    model.add(LSTM(units=20, dropout=0.1, activation='relu'))
     # model.add(LSTM(units=50, dropout=0.1, return_sequences=True, activation='relu'))
     # model.add(LSTM(units=50, dropout=0.1, activation='relu'))
 
     model.add(Dense(units=1, activation='sigmoid'))
 
-    optimizer = Adam(learning_rate=0.0001)
+    optimizer = Adam(learning_rate=0.001)
     model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    history = model.fit(xTrainLstm, yTrain, batch_size=32, epochs=20)
+    history = model.fit(xTrainLstm, yTrain, batch_size=32, epochs=200)
     yPredicted = model.predict(xTestLstm)
 
-    # yPredicted = (yPredicted > 0.5).astype(int)
     yPredicted = np.reshape(yPredicted, [-1])
+    yPredicted = (yPredicted > 0.5).astype(int)
     yTest = np.reshape(yTest, [-1])
     print(yPredicted)
     print(yTest)

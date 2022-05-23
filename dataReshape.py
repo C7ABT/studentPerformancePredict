@@ -66,6 +66,11 @@ def dataReshape():
         for i in range(3):
             d = data[index * 3 + i]
             tmp = tmp + d[3:] + [d[2]]
+        kmStudyTemp = kmStudy.labels_[index].tolist()
+        kmScheduledTemp = kmScheduled.labels_[index].tolist()
+        kmSpendTemp = kmSpend.labels_[index].tolist()
+        tmp = tmp + [kmStudyTemp] + [kmScheduledTemp] + [kmSpendTemp]
+        tmp[-1], tmp[-4] = tmp[-4], tmp[-1]
         xData.append(tmp[:-1])
         yData.append(tmp[-1])
 
